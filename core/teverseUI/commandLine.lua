@@ -22,25 +22,32 @@ local container = teverse.construct("guiScrollView", {
 
 local textBox = teverse.construct("guiTextBox", {
 	parent = container;
-	size = container.canvasSize + guiCoord(0, container.absoluteSize.x, 0, 0);
+	size = container.canvasSize;
 	backgroundColour = colour(0.9, 0.9, 0.9);
 	textColour = colour(0.5, 0.5, 0.5);
+	textSize = 20;
 	textEditable = true;
+	textWrap = true;
 })
 
---Horizontial scrolling
-textBox:on("mouseWheel", function(change)
-	local newLocation = container.canvasOffset + vector2(change.y, change.x) * 2
-	container.canvasOffset = vector2(
-		clamp(newLocation.x, 0, container.canvasSize.offset.x),
-		clamp(newLocation.y, 0, container.canvasSize.offset.y))
+textBox:on("changed", function(property)
+	if property == "text" then
+		container.canvasSize = guiCoord(1, 0, 0, math.max(20, textBox.textDimensions.y))
+		textBox.size = guiCoord(1, 0, 0, math.max(20, textBox.textDimensions.y))
+	end
 end)
 
---Adjusting canvas to fit the text.
-textBox:on("changed", function(propertyName)
-	if propertyName == "text" then
-		container.canvasSize = guiCoord(1, 0, 1, 0);
-		textBox.size = container.canvasSize + guiCoord(0, container.absoluteSize.x, 0, 0)
+local lastParEvent
+container:on("changed", function(propertyName)
+	if propertyName == "parent" then
+		if lastParEvent then
+			teverse.disconnect(lastParEvent)
+		end
+
+		lastParEvent = container.parent:on("changed", function()
+			container.canvasSize = guiCoord(1, 0, 0, math.max(20, textBox.textDimensions.y))
+			textBox.size = guiCoord(1, 0, 0, math.max(20, textBox.textDimensions.y))
+		end)
 	end
 end)
 
